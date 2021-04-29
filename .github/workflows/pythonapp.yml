@@ -49,7 +49,7 @@ jobs:
         ApplicationVersion=$(cat setup.py | grep version | cut -d '=' -f 2 | cut -d "'" -f 2)
         echo "setup.py file version: $ApplicationVersion"
         echo "Testing if this version already exists in GitHub..."
-        STATUS_CODE=$(curl -LI https://api.github.com/repos/gcarrarom/fancy-jira/git/ref/tags/v$ApplicationVersion  -o /dev/null -w '%{http_code}\n')
+        STATUS_CODE=$(curl -LI https://api.github.com/repos/gcarrarom/${GITHUB_REPOSITORY}/git/ref/tags/v$ApplicationVersion  -o /dev/null -w '%{http_code}\n')
         echo "GitHub returned with a ${STATUS_CODE}."
 
         if [[ "$STATUS_CODE" != "404" ]]; then
