@@ -267,8 +267,6 @@ def get_weekly_timesheet(ctx, *args, **kwargs):
 def timesheet_delete(ctx, id):
     '''
     Deletes a timesheet entry from ABAK
-
-    id (str): ID of the timesheet to delete
     '''
     config = get_config() 
     url = config['endpoint'] + "/Abak/Transact/DeleteTransacts"
