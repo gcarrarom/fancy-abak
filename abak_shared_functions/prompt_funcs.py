@@ -8,4 +8,4 @@ def ask_yn(yn_question, default='n'):
         elif tries > 2:
             response = default
             break
-    return response
+    return True if response == 'y' else False
