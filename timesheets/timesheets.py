@@ -6,7 +6,7 @@ from tabulate import tabulate
 from datetime import datetime, timedelta
 from os import environ
 
-from abak_shared_functions import Sorry, get_config, option_not_none
+from abak_shared_functions import Sorry, get_config, option_not_none, ask_yn
 
 @click.group()
 @click.pass_context
@@ -287,6 +287,102 @@ def timesheet_delete(ctx, id):
     result.raise_for_status()
     click.echo("Timesheet entry " + id + " deleted successfully!")
 
+@click.command(name='approve')
+@click.pass_context
+@click.option('--start-date', '-s', help="Start date of the range for timesheet approval", callback=validate_date, required=True)
+@click.option('--end-date', '-e', help="End date of the range for timesheet approval", callback=validate_date, required=True)
+@click.option('--remove', is_flag=True, help="Unapproves the timesheet range")
+def timesheet_approve(ctx, start_date, end_date, remove):
+    '''
+    Approve timesheet entries
+    '''
+    config = get_config() 
+
+    
+    url = config['endpoint'] + "/Abak/Approval/GetApprovalsList"
+
+    headers = {
+        "Cookie": config['token']
+    }
+    body = {
+        "MIME Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "employeeId": config['user_id'],
+        "groupBy": "Date",
+        "groupDir": "ASC",
+        "summaryFields": "Quantity",
+        "summaryFields": "BillableQuantity",
+        "summaryFields": "TotalExpense",
+        "summaryTypes": "sum",
+        "summaryTypes": "sum",
+        "summaryTypes": "sum",
+        "sort": "Date",
+        "dir": "DESC",
+        "startDate": start_date + "T00:00:00",
+        "endDate": end_date + "T00:00:00",
+        "approvalType": "Timesheet",
+        "start": "0",
+        "limit": "50"
+    }
+
+
+    result = requests.post(url, headers=headers, json=body)
+    result.raise_for_status()
+
+    output_value = json.loads(convert_date(result.text))
+
+    output_format = {
+        "Date": "Date",
+        "Project": "ProjectName",
+        "Description": "Description",
+        "Hrs": "Quantity"
+    }
+    headers = [header for header in output_format]
+    rows = []
+    for row in output_value['data']:
+        instance = []
+        for header in headers:
+            instance.append(row[output_format.get(header)] if header != "Date" else row[output_format.get(header)].split('T00')[0])
+        rows.append(instance)
+    if not remove:
+        click.echo("Here are the timesheet entries to be approved:")
+    else:
+        click.echo("Here are the timesheet entries to be Unapproved:")
+
+    print(tabulate(rows, headers=headers))
+    if not remove:
+        if ask_yn("Are you sure that you want to approve these timesheets from " + start_date + " to " + end_date + "?") == 'n':
+            click.echo('Aborted!')
+            exit(0)
+    else:
+        if ask_yn("Are you sure that you want to remove the approval for these timesheets from " + start_date + " to " + end_date + "?") == 'n':
+            click.echo('Aborted!')
+            exit(0)
+
+    if not remove:
+        url = config['endpoint'] + "/Abak/Approval/ApproveRangeFromApprobation"
+    else:
+        url = config['endpoint'] + "/Abak/Approval/UnapproveRange"
+    headers = {
+        "Cookie": config['token']
+    }
+    body = {
+        "MIME Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "approvalType": "Timesheet",
+        "employeeId": config['user_id'],
+        "startDate": start_date,
+        "endDate": end_date
+    }
+
+    result = requests.post(url, headers=headers, json=body)
+    result.raise_for_status()
+    if not remove:
+        click.echo("Timesheets approved successfully!")
+    else:
+        click.echo("Timesheets unapproved successfully!")
+
+
+
 timesheet.add_command(timesheet_list)
 timesheet.add_command(timesheet_set)
 timesheet.add_command(timesheet_delete)
+timesheet.add_command(timesheet_approve)
