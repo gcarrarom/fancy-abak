@@ -1,3 +1,4 @@
+![PyPI - Downloads](https://img.shields.io/pypi/dm/fancy-abak)
 # fancy-abak
 CLI tool to use ABAK
 
