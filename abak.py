@@ -14,7 +14,7 @@ from abak_shared_functions import write_config_file, get_config
 @click.pass_context
 def abak(ctx):
     config = get_config()
-    if ctx.invoked_subcommand != 'login':
+    if ctx.invoked_subcommand not in ['login', 'config']:
         try:
             headers = {
                 'Cookie': config['token']
