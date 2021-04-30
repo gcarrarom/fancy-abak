@@ -120,11 +120,11 @@ def convert_date(text):
     return text
 
 @click.command(name='set')
-@click.option('--date', help="Date to set the timesheet entry", default=datetime.strftime(datetime.now(), format='%m/%d/%y'), callback=validate_entry_date)
+@click.option('--date', help="Date to set the timesheet entry", default=datetime.strftime(datetime.now(), format='%m/%d/%y'), callback=validate_entry_date, show_default="Today (MM/DD/YY)")
 @click.option('--description', '-d', help="Description of the activities for that day", required=True, callback=validate_description)
 @click.option('--hours', '-h', help="Number of work-hours to be assigned for the timesheet entry.", default=8.0, type=float)
-@click.option('--client-id', '-c', help="ID of the client to assign the timesheet entry.", default=lambda: environ.get('client_id', None))
-@click.option('--project-id', '-p', help="ID of the project to to assign the timesheet entry.", default=lambda: environ.get('project_id', None))
+@click.option('--client-id', '-c', help="ID of the client to assign the timesheet entry.", default=lambda: environ.get('client_id', None), show_default="selected client_id")
+@click.option('--project-id', '-p', help="ID of the project to to assign the timesheet entry.", default=lambda: environ.get('project_id', None), show_default="selected project_id")
 @click.pass_context
 def timesheet_set(ctx, date, description, hours, client_id, project_id):
     '''
