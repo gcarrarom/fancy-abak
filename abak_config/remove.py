@@ -15,6 +15,10 @@ def remove_config(ctx, key):
     Args:
         key (str): The key to be removed
     '''
+    remove_configuration_key(key)
+
+def remove_configuration_key(key):
     configuration = get_config()
-    del configuration[key]
+    if configuration.get(key):
+        del configuration[key]
     write_config_file(configuration['config_file_path'], configuration)
