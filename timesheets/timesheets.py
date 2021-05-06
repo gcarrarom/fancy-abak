@@ -136,7 +136,7 @@ def timesheet_set(ctx, date, description, hours, client_id, project_id):
 @click.command(name='apply')
 @click.pass_context
 @click.option('--file', '-f', type=click.Path(exists=True, readable=True), help="File to read the timesheet entries from")
-@click.option('--example', type=click.Choice(['json', 'yaml', 'yml']), help="Outputs an example file", default=False)
+@click.option('--example', type=click.Choice(['json', 'yaml', 'yml']), help="Outputs an example file")
 def timesheet_apply(ctx, file, example):
     '''
     Applies all the entries from the given file
