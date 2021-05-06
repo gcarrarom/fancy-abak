@@ -13,6 +13,9 @@ def set_config(ctx, key, value):
         key (str): The key to be set
         value (str): The value for the key
     '''
+    set_configuration_key(value, key)
+    
+def set_configuration_key(value, key):
     configuration = get_config()
     configuration[key] = value
     write_config_file(configuration['config_file_path'], configuration)
