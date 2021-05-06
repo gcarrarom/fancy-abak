@@ -38,8 +38,12 @@ def create_default_configfile():
     app_name = '.abakctl'
     config_file = 'config.json'
     app_dir = click.get_app_dir(app_name)
-    if not os.path.isdir(app_dir):
-            os.mkdir(app_dir)
+    dir_split = app_dir.split('/')
+    for i in range(2, len(dir_split)+1, 1):
+        current_path = "/".join(dir_split[:i])
+        print(current_path)
+        if not os.path.isdir(current_path):
+                os.mkdir(current_path)
     config = {}
     write_config_file(os.path.join(app_dir, config_file), config)
 
