@@ -1,5 +1,4 @@
 import click
-import rich
 from abak_shared_functions import get_config
 
 @click.command(name="show")
@@ -16,6 +15,6 @@ def show_config(ctx, key):
     configuration['token'] = "**********"
     del configuration['headers']
     if not key:
-        rich.print(configuration)
+        print(configuration)
     elif configuration.get(key):
         print(configuration[key])
