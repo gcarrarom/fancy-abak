@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='fancy-abak',
-    version='0.1.1',
+    version='0.1.2',
     author='Gui Martins',
     url='https://fancywhale.ca/',
     author_email='gmartins@fancywhale.ca',
@@ -12,7 +12,8 @@ setup(
     install_requires=[
         'click',
         'requests',
-        'tabulate'
+        'tabulate',
+        'iterfzf'
     ],
     entry_points='''
         [console_scripts]
