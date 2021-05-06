@@ -22,6 +22,9 @@ def project(ctx):
 @click.option('--query-text', '-q', help="Text to search for in the project name", default="")
 @click.pass_context
 def list_projects(ctx, output, client_id, query_text):
+    '''
+    Lists the projects available for the given client
+    '''
     get_projects(client_id, query_text, output)
 
 @click.command(name='select')

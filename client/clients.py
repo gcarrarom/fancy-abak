@@ -21,11 +21,17 @@ def client(ctx):
 @click.option('-o', '--output', help="The format of the output of this command", type=click.Choice(['json', 'table']), default='table')
 @click.option('--query-text', '-q', help="Text to search for in the client name", default="")
 def client_list(ctx, output, query_text):
+    '''
+    Lists the clients available
+    '''
     get_clients(query_text, output)
 
 @click.command(name='select')
 @click.pass_context
 def client_select(ctx):
+    '''
+    Selects the default client ID to use
+    '''
     clients_list = get_clients("", 'python')
     selected_dirty = iterfzf([" - ".join([item.get('Id'), item.get('DisplayName')]) for item in clients_list])
     selected = selected_dirty.split(' - ')[0]
