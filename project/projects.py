@@ -31,6 +31,9 @@ def list_projects(ctx, output, client_id, query_text):
 @click.option('--client-id', '-c', help="ID of the client to search for projects", default=lambda: environ.get('client_id', None))
 @click.pass_context
 def project_select(ctx, client_id):
+    '''
+    Selects the project to use as default
+    '''
     projects_list = get_projects(client_id, "", 'python')
     selected_dirty = iterfzf([" - ".join([item.get('Id'), item.get('Display')]) for item in projects_list])
     selected = selected_dirty.split(' - ')[0]
