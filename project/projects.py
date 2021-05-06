@@ -35,8 +35,11 @@ def project_select(ctx, client_id):
     Selects the project to use as default
     '''
     projects_list = get_projects(client_id, "", 'python')
-    selected_dirty = iterfzf([" - ".join([item.get('Id'), item.get('Display')]) for item in projects_list])
-    selected = selected_dirty.split(' - ')[0]
+    if len(projects_list) > 1:
+        selected_dirty = iterfzf([" - ".join([item.get('Id'), item.get('Display')]) for item in projects_list])
+        selected = selected_dirty.split(' - ')[0]
+    else:
+        selected = projects_list[0].get('Id')
     set_configuration_key(selected, 'project_id')
     click.echo("project " + selected + " selected as default!")
 

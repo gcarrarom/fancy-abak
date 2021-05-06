@@ -33,8 +33,11 @@ def client_select(ctx):
     Selects the default client ID to use
     '''
     clients_list = get_clients("", 'python')
-    selected_dirty = iterfzf([" - ".join([item.get('Id'), item.get('DisplayName')]) for item in clients_list])
-    selected = selected_dirty.split(' - ')[0]
+    if len(clients_list) > 1:
+        selected_dirty = iterfzf([" - ".join([item.get('Id'), item.get('DisplayName')]) for item in clients_list])
+        selected = selected_dirty.split(' - ')[0]
+    else:
+        selected = clients_list[0].get('Id')
     set_configuration_key(selected, 'client_id')
     remove_configuration_key('project_id')
     click.echo("Client " + selected + " selected as default!")
