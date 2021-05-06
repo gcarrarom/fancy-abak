@@ -2,6 +2,7 @@ import click
 import requests
 import re
 import json
+import yaml
 from tabulate import tabulate
 from datetime import datetime, timedelta
 from os import environ
@@ -130,6 +131,69 @@ def timesheet_set(ctx, date, description, hours, client_id, project_id):
     '''
     Creates a timesheet entry in ABAK
     '''
+    set_timesheet_entry(client_id, project_id, date, description, hours)
+
+@click.command(name='apply')
+@click.pass_context
+@click.option('--file', '-f', type=click.Path(exists=True, readable=True), help="File to read the timesheet entries from")
+@click.option('--example', type=click.Choice(['json', 'yaml', 'yml']), help="Outputs an example file", default=False)
+def timesheet_apply(ctx, file, example):
+    '''
+    Applies all the entries from the given file
+    Currently supported formats:
+        json, yaml and yml
+    '''
+
+    if example:
+        first_day = datetime.today() - timedelta(days=datetime.today().weekday())
+        example_object = {
+            'clients': [
+                {
+                    'clientId': client_id,
+                    'projects': [
+                        {
+                            'projectId': project_id,
+                            'entries': [
+                                {
+                                    'date': datetime.strftime(date_entry, format='%m/%d/%y'),
+                                    'hours': 8,
+                                    'description': "Something Meaningful"
+                                }
+                            for date_entry in [first_day + timedelta(days=x) for x in range(7)]]
+                        }
+                    for project_id in ['project_id_1', 'project_id_2']]
+                }
+            for client_id in ['client_id_1', 'client_id_2']]
+        }
+        if example == 'json':
+            click.echo(json.dumps(example_object))
+        elif example in ['yaml', 'yml']:
+            click.echo(yaml.safe_dump(example_object))
+        exit()
+
+    if not file:
+        click.exceptions.MissingParameter(param=click.Parameter(['--file', '-f']))
+
+    supported_formats = ['json', 'yaml', 'yml']
+    format = file.split('.')[-1]
+
+    if format not in supported_formats:
+        raise Sorry("files of the format '." + format + "' are not supported")
+    
+    with open(file, 'r') as filereader:
+        if format == "json":
+            data = json.loads(filereader.read())
+        elif format in ["yaml", 'yml']:
+            data = yaml.load(filereader.read(), Loader=yaml.BaseLoader)
+    
+    for client in data.get('clients'):
+        for project in client.get('projects'):
+            for entry in project.get('entries'):
+                validate_entry_date(None, None, entry.get('date'))
+                validate_description(None, None, entry.get('description'))
+                set_timesheet_entry(client.get('clientId'), project.get('projectId'), entry.get('date'), entry.get('description'), entry.get('hours'))
+
+def set_timesheet_entry(client_id, project_id, date, description, hours):
     option_not_none('client id', client_id)
     option_not_none('project id', project_id)
     config = get_config()
@@ -386,3 +450,4 @@ timesheet.add_command(timesheet_list)
 timesheet.add_command(timesheet_set)
 timesheet.add_command(timesheet_delete)
 timesheet.add_command(timesheet_approve)
+timesheet.add_command(timesheet_apply)
