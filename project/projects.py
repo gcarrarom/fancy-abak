@@ -1,4 +1,6 @@
+from abak_config.set import set_configuration_key
 import click
+from iterfzf import iterfzf
 from tabulate import tabulate
 import json
 import requests
@@ -20,6 +22,19 @@ def project(ctx):
 @click.option('--query-text', '-q', help="Text to search for in the project name", default="")
 @click.pass_context
 def list_projects(ctx, output, client_id, query_text):
+    get_projects(client_id, query_text, output)
+
+@click.command(name='select')
+@click.option('--client-id', '-c', help="ID of the client to search for projects", default=lambda: environ.get('client_id', None))
+@click.pass_context
+def project_select(ctx, client_id):
+    projects_list = get_projects(client_id, "", 'python')
+    selected_dirty = iterfzf([" - ".join([item.get('Id'), item.get('Display')]) for item in projects_list])
+    selected = selected_dirty.split(' - ')[0]
+    set_configuration_key(selected, 'project_id')
+    click.echo("project " + selected + " selected as default!")
+
+def get_projects(client_id, query_text, output):
     option_not_none('client id', client_id)
     config = get_config()
     url = config['endpoint'] + "/Abak/Common/GetTimesheetProjectsForPaginatedCombo"
@@ -44,7 +59,10 @@ def list_projects(ctx, output, client_id, query_text):
         headers = ["Id", "Display"]
         table = tabulate([[project[key]for key in project if key in headers]for project in projects.get('data')], headers=headers)
         print(table)
-    else:
+    elif output == 'json':
         print(json.dumps(projects.get('data')))
+    elif output == 'python':
+        return projects.get('data')
 
 project.add_command(list_projects)
+project.add_command(project_select)
