@@ -299,6 +299,8 @@ def set_timesheet_entry(client_id, project_id, date, description, hours):
     result = requests.post(url, headers=headers, data=body)
     result.raise_for_status()
     timesheet_entry = result.json()
+    if not timesheet_entry.get('success'):
+        raise Sorry(timesheet_entry.get('extraParams', {'Message': 'there was an error with your request'}).get('Message'))
     click.echo("Timesheet entry " + timesheet_entry.get('extraParams', {"newID": ""}).get('newID') + " created successully!")
 
 
