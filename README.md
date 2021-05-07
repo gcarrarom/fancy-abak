@@ -13,3 +13,4 @@ Package is available in PyPi:
 
 # Roadmap
 1. Batch duplicate
+2. Parallel apply
