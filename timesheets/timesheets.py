@@ -197,7 +197,7 @@ def set_timesheet_entry(client_id, project_id, date, description, hours):
     option_not_none('client id', client_id)
     option_not_none('project id', project_id)
     config = get_config()
-    url = "https://payme.objectsharp.com/Abak/Timesheet/Edit"
+    url = config['endpoint'] + "/Abak/Timesheet/Edit"
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Cookie": config['token']
