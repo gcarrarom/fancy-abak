@@ -7,7 +7,7 @@ from tabulate import tabulate
 from datetime import datetime, timedelta
 from os import environ
 
-from abak_shared_functions import Sorry, get_config, option_not_none, ask_yn
+from abak_shared_functions import Sorry, get_config, option_not_none, ask_yn, generate_bs
 
 @click.group()
 @click.pass_context
@@ -30,7 +30,9 @@ def validate_entry_date(ctx, param, value):
         raise Sorry("date needs to be in the format MM/dd/YY")
 
 def validate_description(ctx, param, value):
-    if len(value) <= 100:
+    if not value:
+        raise Sorry("description ('--description', '-d') is a required parameter")
+    elif len(value) <= 100:
         return value
     else:
         raise Sorry("description of the timesheet entry must not be larger than 100 characters")
@@ -122,15 +124,23 @@ def convert_date(text):
 
 @click.command(name='set')
 @click.option('--date', help="Date to set the timesheet entry", default=datetime.strftime(datetime.now(), format='%m/%d/%y'), callback=validate_entry_date, show_default="Today (MM/DD/YY)")
-@click.option('--description', '-d', help="Description of the activities for that day", required=True, callback=validate_description)
+@click.option('--description', '-d', help="Description of the activities for that day", required=False)
 @click.option('--hours', '-h', help="Number of work-hours to be assigned for the timesheet entry.", default=8.0, type=float)
 @click.option('--client-id', '-c', help="ID of the client to assign the timesheet entry.", default=lambda: environ.get('client_id', None), show_default="selected client_id")
 @click.option('--project-id', '-p', help="ID of the project to to assign the timesheet entry.", default=lambda: environ.get('project_id', None), show_default="selected project_id")
+@click.option('--bs', help="For when you need to dazzle!", is_flag=True)
 @click.pass_context
-def timesheet_set(ctx, date, description, hours, client_id, project_id):
+def timesheet_set(ctx, date, description, hours, client_id, project_id, bs):
     '''
     Creates a timesheet entry in ABAK
     '''
+    if bs:
+        description = generate_bs()
+        if not click.confirm(f"Are you sure you would like to add '{description}' to your timesheet?"):
+            exit(0)
+    else:
+        validate_description(ctx, 'description', description)
+
     set_timesheet_entry(client_id, project_id, date, description, hours)
 
 @click.command(name='apply')
