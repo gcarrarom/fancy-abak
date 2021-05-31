@@ -136,8 +136,7 @@ def timesheet_set(ctx, date, description, hours, client_id, project_id, bs):
     '''
     if bs:
         description = generate_bs()
-        if not click.confirm(f"Are you sure you would like to add '{description}' to your timesheet?"):
-            exit(0)
+        click.confirm(f"Are you sure you would like to add '{description}' to your timesheet?", abort=True)
     else:
         validate_description(ctx, 'description', description)
 
@@ -426,13 +425,9 @@ def timesheet_approve(ctx, start_date, end_date, remove):
 
     print(tabulate(rows, headers=headers))
     if not remove:
-        if click.confirm("Are you sure that you want to approve these timesheets from " + start_date + " to " + end_date + "?", abort=True, default=False):
-            click.echo('Aborted!')
-            exit(0)
+        click.confirm("Are you sure that you want to approve these timesheets from " + start_date + " to " + end_date + "?", abort=True)
     else:
-        if click.confirm("Are you sure that you want to remove the approval for these timesheets from " + start_date + " to " + end_date + "?", abort=True, default=False):
-            click.echo('Aborted!')
-            exit(0)
+        click.confirm("Are you sure that you want to remove the approval for these timesheets from " + start_date + " to " + end_date + "?", abort=True)
 
     if not remove:
         url = config['endpoint'] + "/Abak/Approval/ApproveRangeFromApprobation"
