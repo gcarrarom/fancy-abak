@@ -7,7 +7,7 @@ from tabulate import tabulate
 from datetime import datetime, timedelta
 from os import environ
 
-from abak_shared_functions import Sorry, get_config, option_not_none, ask_yn, generate_bs
+from abak_shared_functions import Sorry, get_config, option_not_none, generate_bs
 
 @click.group()
 @click.pass_context
@@ -426,11 +426,11 @@ def timesheet_approve(ctx, start_date, end_date, remove):
 
     print(tabulate(rows, headers=headers))
     if not remove:
-        if ask_yn("Are you sure that you want to approve these timesheets from " + start_date + " to " + end_date + "?") == 'n':
+        if click.confirm("Are you sure that you want to approve these timesheets from " + start_date + " to " + end_date + "?", abort=True, default=False):
             click.echo('Aborted!')
             exit(0)
     else:
-        if ask_yn("Are you sure that you want to remove the approval for these timesheets from " + start_date + " to " + end_date + "?") == 'n':
+        if click.confirm("Are you sure that you want to remove the approval for these timesheets from " + start_date + " to " + end_date + "?", abort=True, default=False):
             click.echo('Aborted!')
             exit(0)
 
