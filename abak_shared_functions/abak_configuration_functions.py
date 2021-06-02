@@ -1,6 +1,7 @@
 import click
 import os
 import json
+import requests
 
 def get_headers(config):
     return {}
@@ -54,3 +55,24 @@ def write_config_file(file_path, data):
     if data.get('authenticated'): del data['authenticated']
     with open(file_path, 'w') as file_writer:
         file_writer.write(json.dumps(data))
+
+def authenticate(username, password, endpoint):
+    config = get_config()
+    body = {
+        'username': username,
+        'password': password,
+        'device': 'W'
+    }
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    result = requests.post(endpoint + '/Abak/Account/Authenticate', data=body, headers=headers)
+    result.raise_for_status()
+    if result.headers['Set-Cookie'].find('AbakUsername') > 0:
+        config["token"] = result.headers['Set-Cookie']
+        config['endpoint'] = endpoint
+        config['username'] = username
+        write_config_file(config['config_file_path'], config)
+    else:
+        click.echo(result.json()['errorMessage'])
+        exit(10)

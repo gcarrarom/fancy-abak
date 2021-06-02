@@ -1,10 +1,13 @@
 import click
+import json
+import yaml
 from abak_shared_functions import get_config
 
 @click.command(name="show")
+@click.option('-o', '--output', help="Type of output of the configuration", default='json', type=click.Choice(['json', 'yaml']))
 @click.argument('key', required=False)
 @click.pass_context
-def show_config(ctx, key):
+def show_config(ctx, key, output):
     '''
     Shows the current configuration file for JIRA communication and default values
 
@@ -15,6 +18,9 @@ def show_config(ctx, key):
     configuration['token'] = "**********"
     del configuration['headers']
     if not key:
-        print(configuration)
+        if output == 'json':
+            click.echo(json.dumps(configuration))
+        elif output == 'yaml':
+            click.echo(yaml.dump(configuration))
     elif configuration.get(key):
-        print(configuration[key])
+        click.echo(configuration[key])

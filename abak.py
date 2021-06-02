@@ -7,8 +7,9 @@ import project
 import abak_config
 import os
 from click_keyring import keyring_option
+import keyring
 
-from abak_shared_functions import write_config_file, get_config
+from abak_shared_functions import write_config_file, get_config, authenticate
 
 @click.group()
 @click.pass_context
@@ -24,33 +25,20 @@ def abak(ctx):
             write_config_file(config['config_file_path'], config)
             [os.environ.setdefault(key, config[key]) for key in config if key not in ['app_dir', 'config_file_path', 'authenticated', 'headers', 'token']]
         except Exception:
-            print('Please login first!')
-            exit(10)
+            try:
+                authenticate(config['username'], keyring.get_password('fancy-abak', config['username']), config['endpoint'])
+            except KeyError:
+                click.echo('Please login first!')
+                exit(127)
 
 @click.command()
 @click.option('-u', '--username', help="the username to use for login", required=True, prompt=True)
 @keyring_option('-p', '--password', help="the password to use for login", prefix='fancy-abak')
 @click.option('-e', '--endpoint', help="The endpoint where abak is hosted", required=True, prompt=True)
 def login(username, password, endpoint):
-    config = get_config()
-    body = {
-        'username': username,
-        'password': password,
-        'device': 'W'
-    }
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-    result = requests.post(endpoint + '/Abak/Account/Authenticate', data=body, headers=headers)
-    result.raise_for_status()
-    if result.headers['Set-Cookie'].find('AbakUsername') > 0:
-        config["token"] = result.headers['Set-Cookie']
-        config['endpoint'] = endpoint
-        write_config_file(config['config_file_path'], config)
-        print("Login successful!")
-    else:
-        print(result.json()['errorMessage'])
-        exit(10)
+    authenticate(username, password, endpoint)
+    click.echo('Login Successul!')
+
 
 @click.command(name='open')
 def open_browser():
