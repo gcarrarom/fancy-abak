@@ -4,7 +4,9 @@ import re
 import json
 import yaml
 from tabulate import tabulate
+
 from datetime import datetime, timedelta
+import calendar
 from os import environ
 
 from abak_shared_functions import Sorry, get_config, option_not_none, generate_bs
@@ -79,8 +81,9 @@ def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previou
         print(json.dumps(output_value.get('data')))
     elif output == 'table':
         if show_totals:
-            click.echo("For the " + ("month" if query_range == "Monthly" else "day" if query_range == "Daily" else "week") + 
-                        " of " + date + ", here are the totals:")
+            date_datetime = datetime.strptime(date, "%Y-%m-%d") 
+            click.echo("For the " + (f"month of {calendar.month_name[date_datetime.month]}" if query_range == "Monthly" else "day of " + date if query_range == "Daily" else "week of " + date) + 
+                        ", here are the totals:")
             totals = {} 
             for row in output_value.get('data'):
                 totals[row['ProjectName']] = totals.get(row['ProjectName'], 0) + row.get('Quantity', 0)
