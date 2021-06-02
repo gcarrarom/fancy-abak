@@ -6,7 +6,7 @@ import client
 import project
 import abak_config
 import os
-
+from click_keyring import keyring_option
 
 from abak_shared_functions import write_config_file, get_config
 
@@ -29,7 +29,7 @@ def abak(ctx):
 
 @click.command()
 @click.option('-u', '--username', help="the username to use for login", required=True, prompt=True)
-@click.option('-p', '--password', help="the password to use for login", required=True, prompt=True, hide_input=True)
+@keyring_option('-p', '--password', help="the password to use for login", prefix='fancy-abak')
 @click.option('-e', '--endpoint', help="The endpoint where abak is hosted", required=True, prompt=True)
 def login(username, password, endpoint):
     config = get_config()
