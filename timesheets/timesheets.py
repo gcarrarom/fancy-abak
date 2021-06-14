@@ -92,6 +92,7 @@ def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previou
             print(tabulate([[total, totals[total]]for total in totals], headers=headers, numalign="left", colalign=("right",)))
         else:
             output_format = {
+                "Weekday": "Date",
                 "Date": "Date",
                 "Project": "ProjectName",
                 "Description": "Description",
@@ -104,6 +105,11 @@ def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previou
             for row in output_value['data']:
                 instance = []
                 for header in headers:
+                    if header == 'Weekday':
+                        date_text = row[output_format.get(header)].split('T00')[0]
+                        date_instance = datetime.strptime(date_text, "%Y-%m-%d")
+                        instance.append(date_instance.strftime('%A'))
+                    else:
                     instance.append(row[output_format.get(header)] if header != "Date" else row[output_format.get(header)].split('T00')[0])
                 rows.append(instance)
             print(tabulate(rows, headers=headers))
