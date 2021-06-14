@@ -1,6 +1,5 @@
 import webbrowser
 import click
-import requests
 import timesheets
 import client
 import project
@@ -9,7 +8,7 @@ import os
 from click_keyring import keyring_option
 import keyring
 
-from abak_shared_functions import write_config_file, get_config, authenticate
+from abak_shared_functions import write_config_file, get_config, authenticate, httprequest
 
 @click.group()
 @click.pass_context
@@ -17,11 +16,8 @@ def abak(ctx):
     config = get_config()
     if ctx.invoked_subcommand not in ['login', 'config']:
         try:
-            headers = {
-                'Cookie': config['token']
-            }        
-            result = requests.get(config.get('endpoint') + "/Abak/Transact/GetEmployee_Optimized", headers = headers)
-            config['user_id'] = result.json()['data'][0]['Id']
+            result = httprequest('get', None, "/Abak/Transact/GetEmployee_Optimized")
+            config['user_id'] = result['data'][0]['Id']
             write_config_file(config['config_file_path'], config)
             [os.environ.setdefault(key, config[key]) for key in config if key not in ['app_dir', 'config_file_path', 'authenticated', 'headers', 'token']]
         except Exception:
@@ -30,6 +26,9 @@ def abak(ctx):
             except KeyError:
                 click.echo('Please login first!')
                 exit(127)
+            except Exception as exception:
+                raise exception
+            
 
 @click.command()
 @click.option('-u', '--username', help="the username to use for login", required=True, prompt=True)

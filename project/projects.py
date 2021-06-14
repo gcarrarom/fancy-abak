@@ -3,8 +3,7 @@ import click
 from iterfzf import iterfzf
 from tabulate import tabulate
 import json
-import requests
-from abak_shared_functions import get_config, option_not_none
+from abak_shared_functions import get_config, option_not_none, httprequest
 from os import environ
 
 
@@ -46,10 +45,6 @@ def project_select(ctx, client_id):
 def get_projects(client_id, query_text, output):
     option_not_none('client id', client_id)
     config = get_config()
-    url = config['endpoint'] + "/Abak/Common/GetTimesheetProjectsForPaginatedCombo"
-    headers = {
-        "Cookie": config['token']
-    }
     body = {
         "clientId": client_id,
         "isInModif": "false",
@@ -59,11 +54,8 @@ def get_projects(client_id, query_text, output):
         "employeeId": config['user_id']
     }
 
-    result = requests.get(url, headers=headers, data=body)
-    result.raise_for_status()
-
-    projects = result.json()
-
+    projects = httprequest('get', body, "/Abak/Common/GetTimesheetProjectsForPaginatedCombo")
+    
     if output == "table": 
         headers = ["Id", "Display"]
         table = tabulate([[project[key]for key in project if key in headers]for project in projects.get('data')], headers=headers)

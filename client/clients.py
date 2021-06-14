@@ -1,11 +1,10 @@
 from abak_config.remove import remove_configuration_key
 from abak_config.set import set_configuration_key
 import click
-import requests
 import json
 from iterfzf import iterfzf
 from tabulate import tabulate
-from abak_shared_functions import get_config
+from abak_shared_functions import get_config, httprequest
 
 @click.group()
 @click.pass_context
@@ -44,10 +43,6 @@ def client_select(ctx):
 
 def get_clients(query_text, output):
     config = get_config()
-    url = config['endpoint'] + "/Abak/Common/GetTimesheetClientsPaginated"
-    headers = {
-        "Cookie": config['token']
-    }
     body = {
         "queryText": query_text,
         "start": 0,
@@ -55,10 +50,7 @@ def get_clients(query_text, output):
         "employeeId": config['user_id']
     }
 
-    result = requests.get(url, headers=headers, data=body)
-    result.raise_for_status()
-
-    clients = result.json()
+    clients = httprequest('GET', body, "/Abak/Common/GetTimesheetClientsPaginated")
 
     if output == "table": 
         headers = ["Id", "DisplayName"]

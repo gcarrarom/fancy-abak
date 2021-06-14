@@ -1,5 +1,5 @@
+from abak_shared_functions.requests_functions import httprequest
 import click
-import requests
 import re
 import json
 import yaml
@@ -53,8 +53,7 @@ def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previou
     '''
     config = get_config()
     headers = {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Cookie": config['token']
+        "Content-Type": "application/x-www-form-urlencoded"
     }
     if previous:
         #click.echo(date)
@@ -73,10 +72,7 @@ def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previou
         "date": date + "T00:00:00",
         "range": query_range
     }
-    result = requests.post(config['endpoint'] +  '/Abak/Transact/GetGroupedTransacts', headers=headers, data=body)
-    result.raise_for_status()
-    output_value = json.loads(convert_date(result.text))
-    #click.echo(result.text)
+    output_value = httprequest('POST', body, '/Abak/Transact/GetGroupedTransacts', headers=headers)
     if output == 'json':
         print(json.dumps(output_value.get('data')))
     elif output == 'table':
@@ -110,7 +106,7 @@ def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previou
                         date_instance = datetime.strptime(date_text, "%Y-%m-%d")
                         instance.append(date_instance.strftime('%A'))
                     else:
-                    instance.append(row[output_format.get(header)] if header != "Date" else row[output_format.get(header)].split('T00')[0])
+                        instance.append(row[output_format.get(header)] if header != "Date" else row[output_format.get(header)].split('T00')[0])
                 rows.append(instance)
             print(tabulate(rows, headers=headers))
     elif output == "python":
@@ -177,7 +173,7 @@ def timesheet_apply(ctx, file, example):
                                     'hours': 8,
                                     'description': "Something Meaningful"
                                 }
-                            for date_entry in [first_day + timedelta(days=x) for x in range(7)]]
+                            for date_entry in [first_day + timedelta(days=x) for x in range(2)]]
                         }
                     for project_id in ['project_id_1', 'project_id_2']]
                 }
@@ -215,10 +211,8 @@ def set_timesheet_entry(client_id, project_id, date, description, hours):
     option_not_none('client id', client_id)
     option_not_none('project id', project_id)
     config = get_config()
-    url = config['endpoint'] + "/Abak/Timesheet/Edit"
     headers = {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Cookie": config['token']
+        "Content-Type": "application/x-www-form-urlencoded"
     }
     body = {
         "MIME Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -314,9 +308,7 @@ def set_timesheet_entry(client_id, project_id, date, description, hours):
         "tabPanel_ActiveTab": {"tabDetail":0}
     }
 
-    result = requests.post(url, headers=headers, data=body)
-    result.raise_for_status()
-    timesheet_entry = result.json()
+    timesheet_entry = httprequest('POST', body, "/Abak/Timesheet/Edit", headers=headers)
     if not timesheet_entry.get('success'):
         raise Sorry(timesheet_entry.get('extraParams', {'Message': 'there was an error with your request'}).get('Message'))
     click.echo("Timesheet entry " + timesheet_entry.get('extraParams', {"newID": ""}).get('newID') + " created successully!")
@@ -327,7 +319,6 @@ def get_weekly_timesheet(ctx, *args, **kwargs):
     date = datetime.strftime(datetime.now(), format='%Y-%m-%d')
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Cookie": config['token']
     }
     body = {
         "groupBy": "TransactType",
@@ -340,9 +331,7 @@ def get_weekly_timesheet(ctx, *args, **kwargs):
         "date": date + "T00:00:00",
         "range": range
     }
-    result = requests.post(config['endpoint'] + '/Abak/Transact/GetGroupedTransacts', headers=headers, data=body)
-    result.raise_for_status()
-    output_value = json.loads(convert_date(result.text))
+    output_value = httprequest('POST', body, '/Abak/Transact/GetGroupedTransacts', headers=headers)
     return [(row['Id'], row['Description']) for row in output_value.get('data')]
 
 @click.command(name='delete')
@@ -352,11 +341,8 @@ def timesheet_delete(ctx, id):
     '''
     Deletes a timesheet entry from ABAK
     '''
-    config = get_config() 
-    url = config['endpoint'] + "/Abak/Transact/DeleteTransacts"
     headers = {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cookie": config['token']
+        "Content-Type": "application/json; charset=utf-8"
     }
     body = {
         "transacts":[
@@ -367,8 +353,7 @@ def timesheet_delete(ctx, id):
         ]
     }
 
-    result = requests.post(url, headers=headers, json=body)
-    result.raise_for_status()
+    result = httprequest('POST', body, "/Abak/Transact/DeleteTransacts", is_json=True, headers=headers)
     click.echo("Timesheet entry " + id + " deleted successfully!")
 
 @click.command(name='approve')
@@ -381,13 +366,6 @@ def timesheet_approve(ctx, start_date, end_date, remove):
     Approve timesheet entries
     '''
     config = get_config() 
-
-    
-    url = config['endpoint'] + "/Abak/Approval/GetApprovalsList"
-
-    headers = {
-        "Cookie": config['token']
-    }
     body = {
         "MIME Type": "application/x-www-form-urlencoded; charset=UTF-8",
         "employeeId": config['user_id'],
@@ -408,11 +386,7 @@ def timesheet_approve(ctx, start_date, end_date, remove):
         "limit": "50"
     }
 
-
-    result = requests.post(url, headers=headers, json=body)
-    result.raise_for_status()
-
-    output_value = json.loads(convert_date(result.text))
+    output_value = httprequest('POST', body, "/Abak/Approval/GetApprovalsList", is_json=True)
 
     output_format = {
         "Date": "Date",
@@ -439,12 +413,9 @@ def timesheet_approve(ctx, start_date, end_date, remove):
         click.confirm("Are you sure that you want to remove the approval for these timesheets from " + start_date + " to " + end_date + "?", abort=True)
 
     if not remove:
-        url = config['endpoint'] + "/Abak/Approval/ApproveRangeFromApprobation"
+        path = "/Abak/Approval/ApproveRangeFromApprobation"
     else:
-        url = config['endpoint'] + "/Abak/Approval/UnapproveRange"
-    headers = {
-        "Cookie": config['token']
-    }
+        path = "/Abak/Approval/UnapproveRange"
     body = {
         "MIME Type": "application/x-www-form-urlencoded; charset=UTF-8",
         "approvalType": "Timesheet",
@@ -453,8 +424,7 @@ def timesheet_approve(ctx, start_date, end_date, remove):
         "endDate": end_date
     }
 
-    result = requests.post(url, headers=headers, json=body)
-    result.raise_for_status()
+    result = httprequest('POST', body, path, is_json=True)
     if not remove:
         click.echo("Timesheets approved successfully!")
     else:
