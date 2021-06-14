@@ -110,7 +110,7 @@ def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previou
                         date_instance = datetime.strptime(date_text, "%Y-%m-%d")
                         instance.append(date_instance.strftime('%A'))
                     else:
-                    instance.append(row[output_format.get(header)] if header != "Date" else row[output_format.get(header)].split('T00')[0])
+                        instance.append(row[output_format.get(header)] if header != "Date" else row[output_format.get(header)].split('T00')[0])
                 rows.append(instance)
             print(tabulate(rows, headers=headers))
     elif output == "python":
