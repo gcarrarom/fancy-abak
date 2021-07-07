@@ -76,3 +76,9 @@ def authenticate(username, password, endpoint):
     else:
         click.echo(result.json()['errorMessage'])
         exit(10)
+
+def get_clean_config():
+    configuration = get_config()
+    configuration['token'] = "**********"
+    del configuration['headers']
+    return configuration

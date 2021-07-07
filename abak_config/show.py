@@ -1,7 +1,7 @@
 import click
 import json
 import yaml
-from abak_shared_functions import get_config
+from abak_shared_functions import get_clean_config
 
 @click.command(name="show")
 @click.option('-o', '--output', help="Type of output of the configuration", default='json', type=click.Choice(['json', 'yaml']))
@@ -14,9 +14,7 @@ def show_config(ctx, key, output):
     Args:
         key (str): the key to show
     '''
-    configuration = get_config()
-    configuration['token'] = "**********"
-    del configuration['headers']
+    configuration = get_clean_config()
     if not key:
         if output == 'json':
             click.echo(json.dumps(configuration))

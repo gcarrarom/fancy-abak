@@ -11,6 +11,9 @@ from os import environ
 
 from abak_shared_functions import Sorry, get_config, option_not_none, generate_bs
 
+from abak_context import get_contexts
+from project import get_projects
+
 @click.group()
 @click.pass_context
 def timesheet(ctx):
@@ -20,10 +23,11 @@ def timesheet(ctx):
     pass
 
 def validate_date(ctx, param, value):
-    if re.match('[0-9]{4}-[0-9]{2}-[0-9]{2}', value):
-        return value
-    else:
-        raise Sorry("date needs to be in the format YYYY-MM-dd")
+    if value:
+        if re.match('[0-9]{4}-[0-9]{2}-[0-9]{2}', value):
+            return value
+        else:
+            raise Sorry("date needs to be in the format YYYY-MM-dd")
 
 def validate_entry_date(ctx, param, value):
     if re.match('[0-9]{2}/[0-9]{2}/[0-9]{2}', value):
@@ -51,6 +55,9 @@ def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previou
     '''
     Lists the timesheet entries in ABAK
     '''
+    list_timesheet_entries(date, output, query_range, show_totals, show_id, previous)
+    
+def list_timesheet_entries(date, output, query_range, show_totals, show_id, previous):
     config = get_config()
     headers = {
         "Content-Type": "application/x-www-form-urlencoded"
@@ -76,6 +83,15 @@ def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previou
     if output == 'json':
         print(json.dumps(output_value.get('data')))
     elif output == 'table':
+        projects_clean = get_projects(None, "", 'python')
+        project_map = {}
+        contexts = get_contexts()
+        for project in projects_clean:
+            project_cons = re.findall(r'(?:\()(.*)(?:\))', project['Display'])[0]
+            for context in contexts:
+                if project['Id'] == contexts[context]['Project']:
+                    project_map[project_cons] = context
+
         if show_totals:
             date_datetime = datetime.strptime(date, "%Y-%m-%d") 
             click.echo("For the " + (f"month of {calendar.month_name[date_datetime.month]}" if query_range == "Monthly" else "day of " + date if query_range == "Daily" else "week of " + date) + 
@@ -105,12 +121,14 @@ def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previou
                         date_text = row[output_format.get(header)].split('T00')[0]
                         date_instance = datetime.strptime(date_text, "%Y-%m-%d")
                         instance.append(date_instance.strftime('%A'))
+                    elif header == 'Project':
+                        instance.append(project_map.get(re.findall(r'(?:\()(.*)(?:\))', row[output_format[header]])[0], row[output_format[header]]))
                     else:
                         instance.append(row[output_format.get(header)] if header != "Date" else row[output_format.get(header)].split('T00')[0])
                 rows.append(instance)
             print(tabulate(rows, headers=headers))
     elif output == "python":
-        return [(row['Id'], row['Description']) for row in output_value.get('data')]
+        return output_value.get('data')
 
 def convert_date(text):
     start = text.find('new Date')
@@ -130,15 +148,22 @@ def convert_date(text):
 @click.command(name='set')
 @click.option('--date', help="Date to set the timesheet entry", default=datetime.strftime(datetime.now(), format='%m/%d/%y'), callback=validate_entry_date, show_default="Today (MM/DD/YY)")
 @click.option('--description', '-d', help="Description of the activities for that day", required=False)
+@click.option('--context', help="Context to use when setting the timesheet", default=lambda: environ.get('current_context', None))
 @click.option('--hours', '-h', help="Number of work-hours to be assigned for the timesheet entry.", default=8.0, type=float)
 @click.option('--client-id', '-c', help="ID of the client to assign the timesheet entry.", default=lambda: environ.get('client_id', None), show_default="selected client_id")
 @click.option('--project-id', '-p', help="ID of the project to to assign the timesheet entry.", default=lambda: environ.get('project_id', None), show_default="selected project_id")
 @click.option('--bs', help="For when you need to dazzle!", is_flag=True)
 @click.pass_context
-def timesheet_set(ctx, date, description, hours, client_id, project_id, bs):
+def timesheet_set(ctx, date, description, context, hours, client_id, project_id, bs):
     '''
     Creates a timesheet entry in ABAK
     '''
+    contexts = get_contexts()
+    selected_context = contexts.get(context, None)
+
+    if selected_context:
+        client_id = selected_context['Client']
+        project_id = selected_context['Project']
     if bs:
         description = generate_bs()
         click.confirm(f"Are you sure you would like to add '{description}' to your timesheet?", abort=True)
@@ -199,7 +224,8 @@ def timesheet_apply(ctx, file, example):
             data = json.loads(filereader.read())
         elif format in ["yaml", 'yml']:
             data = yaml.load(filereader.read(), Loader=yaml.BaseLoader)
-    
+
+
     for client in data.get('clients'):
         for project in client.get('projects'):
             for entry in project.get('entries'):
@@ -355,6 +381,7 @@ def timesheet_delete(ctx, id):
 
     result = httprequest('POST', body, "/Abak/Transact/DeleteTransacts", is_json=True, headers=headers)
     click.echo("Timesheet entry " + id + " deleted successfully!")
+
 
 @click.command(name='approve')
 @click.pass_context
