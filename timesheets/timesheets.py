@@ -9,7 +9,13 @@ from datetime import datetime, timedelta
 import calendar
 from os import environ
 
-from abak_shared_functions import Sorry, get_config, option_not_none, generate_bs
+from abak_shared_functions import (
+    Sorry, 
+    get_config, 
+    option_not_none, 
+    generate_bs,
+    get_date_format_from_abak
+)
 
 from abak_context import get_contexts
 from project import get_projects
@@ -22,18 +28,15 @@ def timesheet(ctx):
     '''
     pass
 
-def validate_date(ctx, param, value):
-    if value:
-        if re.match('[0-9]{4}-[0-9]{2}-[0-9]{2}', value):
-            return value
-        else:
-            raise Sorry("date needs to be in the format YYYY-MM-dd")
-
 def validate_entry_date(ctx, param, value):
-    if re.match('[0-9]{2}/[0-9]{2}/[0-9]{2}', value):
+    if not value:
+        return None
+    config = get_config()
+    try:
+        datetime.strptime(value, config['date_format'])
         return value
-    else:
-        raise Sorry("date needs to be in the format MM/dd/YY")
+    except:
+        raise Sorry(f"date needs to be in the format {config['date_format']}")
 
 def validate_description(ctx, param, value):
     if not value:
@@ -45,7 +48,7 @@ def validate_description(ctx, param, value):
 
 @click.command(name='list')
 @click.pass_context
-@click.option('-d', '--date', help='The reference date to use for the query. Format YYYY-MM-dd', required=False, callback=validate_date, default=datetime.strftime(datetime.now(), format='%Y-%m-%d'))
+@click.option('-d', '--date', help='The reference date to use for the query. Format in the config key "date_format"', required=False, callback=validate_entry_date)
 @click.option('-o', '--output', help='The output type you want', type=click.Choice(['json', 'table']), default='table')
 @click.option('--query-range', '-r', help="The range to query for", type=click.Choice(['Weekly', 'Monthly', "Daily"]), default="Weekly")
 @click.option('--show-totals', help="Show a summary of all projects for the given range", is_flag=True)
@@ -59,14 +62,18 @@ def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previou
     
 def list_timesheet_entries(date, output, query_range, show_totals, show_id, previous):
     config = get_config()
+
+    if not date:
+        date = datetime.strftime(datetime.now(), format=config['date_format'])
+
     headers = {
         "Content-Type": "application/x-www-form-urlencoded"
     }
     if previous:
         #click.echo(date)
-        date_datetime = datetime.strptime(date, "%Y-%m-%d") 
+        date_datetime = datetime.strptime(date, config['date_format']) 
         delta = timedelta(days=date_datetime.day + 1) if query_range == "Monthly" else timedelta(days=1) if query_range == "Daily" else timedelta(weeks=1)
-        date = datetime.strftime(date_datetime - delta, format='%Y-%m-%d') 
+        date = datetime.strftime(date_datetime - delta, format=config['date_format']) 
         #click.echo(date)
     body = {
         "groupBy": "TransactType",
@@ -79,6 +86,7 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
         "date": date + "T00:00:00",
         "range": query_range
     }
+
     output_value = httprequest('POST', body, '/Abak/Transact/GetGroupedTransacts', headers=headers)
     if output == 'json':
         print(json.dumps(output_value.get('data')))
@@ -93,7 +101,7 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
                     project_map[project_cons] = context
 
         if show_totals:
-            date_datetime = datetime.strptime(date, "%Y-%m-%d") 
+            date_datetime = datetime.strptime(date, config['date_format']) 
             click.echo("For the " + (f"month of {calendar.month_name[date_datetime.month]}" if query_range == "Monthly" else "day of " + date if query_range == "Daily" else "week of " + date) + 
                         ", here are the totals:")
             totals = {} 
@@ -119,7 +127,7 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
                 for header in headers:
                     if header == 'Weekday':
                         date_text = row[output_format.get(header)].split('T00')[0]
-                        date_instance = datetime.strptime(date_text, "%Y-%m-%d")
+                        date_instance = datetime.strptime(date_text, config['date_format'])
                         instance.append(date_instance.strftime('%A'))
                     elif header == 'Project':
                         instance.append(project_map.get(re.findall(r'(?:\()(.*)(?:\))', row[output_format[header]])[0], row[output_format[header]]))
@@ -146,7 +154,7 @@ def convert_date(text):
     return text
 
 @click.command(name='set')
-@click.option('--date', help="Date to set the timesheet entry", default=datetime.strftime(datetime.now(), format='%m/%d/%y'), callback=validate_entry_date, show_default="Today (MM/DD/YY)")
+@click.option('--date', help="Date to set the timesheet entry", callback=validate_entry_date, show_default="Today")
 @click.option('--description', '-d', help="Description of the activities for that day", required=False)
 @click.option('--context', help="Context to use when setting the timesheet", default=lambda: environ.get('current_context', None))
 @click.option('--hours', '-h', help="Number of work-hours to be assigned for the timesheet entry.", default=8.0, type=float)
@@ -158,6 +166,10 @@ def timesheet_set(ctx, date, description, context, hours, client_id, project_id,
     '''
     Creates a timesheet entry in ABAK
     '''
+    config = get_config()
+    if not date:
+        date = datetime.strftime(datetime.now(), format=config['date_format'])
+
     contexts = get_contexts()
     selected_context = contexts.get(context, None)
 
@@ -182,7 +194,7 @@ def timesheet_apply(ctx, file, example):
     Currently supported formats:
         json, yaml and yml
     '''
-
+    config = get_config()
     if example:
         first_day = datetime.today() - timedelta(days=datetime.today().weekday())
         example_object = {
@@ -194,7 +206,7 @@ def timesheet_apply(ctx, file, example):
                             'projectId': project_id,
                             'entries': [
                                 {
-                                    'date': datetime.strftime(date_entry, format='%m/%d/%y'),
+                                    'date': datetime.strftime(date_entry, format=config['date_format']),
                                     'hours': 8,
                                     'description': "Something Meaningful"
                                 }
@@ -237,6 +249,7 @@ def set_timesheet_entry(client_id, project_id, date, description, hours):
     option_not_none('client id', client_id)
     option_not_none('project id', project_id)
     config = get_config()
+    date = datetime.strftime(datetime.strptime(date, config['date_format']), get_date_format_from_abak(config['abak_date_format']))
     headers = {
         "Content-Type": "application/x-www-form-urlencoded"
     }
@@ -342,7 +355,7 @@ def set_timesheet_entry(client_id, project_id, date, description, hours):
 
 def get_weekly_timesheet(ctx, *args, **kwargs):
     config = get_config()
-    date = datetime.strftime(datetime.now(), format='%Y-%m-%d')
+    date = datetime.strftime(datetime.now(), format=config['date_format'])
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
     }
@@ -385,8 +398,8 @@ def timesheet_delete(ctx, id):
 
 @click.command(name='approve')
 @click.pass_context
-@click.option('--start-date', '-s', help="Start date of the range for timesheet approval", callback=validate_date, required=True)
-@click.option('--end-date', '-e', help="End date of the range for timesheet approval", callback=validate_date, required=True)
+@click.option('--start-date', '-s', help="Start date of the range for timesheet approval", callback=validate_entry_date, required=True)
+@click.option('--end-date', '-e', help="End date of the range for timesheet approval", callback=validate_entry_date, required=True)
 @click.option('--remove', is_flag=True, help="Unapproves the timesheet range")
 def timesheet_approve(ctx, start_date, end_date, remove):
     '''

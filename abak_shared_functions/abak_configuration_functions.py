@@ -2,6 +2,7 @@ import click
 import os
 import json
 import requests
+import re
 
 def get_headers(config):
     return {}
@@ -72,6 +73,9 @@ def authenticate(username, password, endpoint):
         config["token"] = result.headers['Set-Cookie']
         config['endpoint'] = endpoint
         config['username'] = username
+        config['abak_date_format'] = re.findall(r'(?:\{)(.*?)(?:\})', re.findall(r'(?:AbakDateFormat=)(.*?)(?:;)', result.headers['Set-Cookie'])[0])[-1]
+        if not config.get('date_format'):
+            config['date_format'] = "%Y-%m-%d"
         write_config_file(config['config_file_path'], config)
     else:
         click.echo(result.json()['errorMessage'])
@@ -82,3 +86,35 @@ def get_clean_config():
     configuration['token'] = "**********"
     del configuration['headers']
     return configuration
+
+
+def get_date_format_from_abak(abak_date):
+    format_date = {
+        'M/dd/yy': '%m/%d/%y',
+        "d/M/y": '%m/%d/%y',
+        "dd/MM/yy": "%d/%m/%y",
+        "dd/MM/yyyy": "%d/%m/%Y",
+        "d/M/yy": "%d/%m/%y",
+        "d/M/yyyy": "%d/%m/%Y",
+        "d/MM/yyyy": "%d/%m/%Y",
+        "dd/M/yyyy": "%d/%m/%Y",
+        "dd-MM-yyyy": '%d-%m-%Y', 
+        "d-MM-yyyy": '%d-%m-%Y', 
+        "d-M-yyyy": '%d-%m-%Y', 
+        "d-M-yy": '%d-%m-%y', 
+        "dd-M-yyyy": '%d-%m-%Y',
+        "d-M-y":  '%d-%m-%y',
+        "M-dd-yy": '%m-%d-%y',
+        "Y/M/d": '%Y/%m/%d',
+        "yyyy/MM/dd": '%Y/%m/%d',
+        "Y-M-d": '%Y-%m-%d', 
+        "yyyy-MM-dd": '%Y-%m-%d',
+        "yyyy/M/d": '%Y/%m/%d',
+        "yyyy-M-d": '%Y-%m-%d',
+        "y/M/d": '%y/%m/%d',
+        "yy/MM/dd": '%y/%m/%d',
+        "y-M-d": '%y-%m-%d',
+        "yy-MM-dd": '%y-%m-%d'
+    }
+
+    return format_date.get(abak_date)
