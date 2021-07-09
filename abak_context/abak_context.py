@@ -82,7 +82,8 @@ def context_select(name):
         else:
             selected_context = name
 
-    set_configuration_key(selected_context, 'current_context')
+    if selected_context:
+        set_configuration_key(selected_context, 'current_context')
     pass
 
 @click.command(name='remove')
