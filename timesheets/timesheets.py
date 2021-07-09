@@ -49,7 +49,7 @@ def validate_description(ctx, param, value):
 @click.command(name='list')
 @click.pass_context
 @click.option('-d', '--date', help='The reference date to use for the query. Format in the config key "date_format"', required=False, callback=validate_entry_date)
-@click.option('-o', '--output', help='The output type you want', type=click.Choice(['json', 'table']), default='table')
+@click.option('-o', '--output', help='The output type you want', type=click.Choice(['json', 'table', 'wide']), default='table')
 @click.option('--query-range', '-r', help="The range to query for", type=click.Choice(['Weekly', 'Monthly', "Daily"]), default="Weekly")
 @click.option('--show-totals', help="Show a summary of all projects for the given range", is_flag=True)
 @click.option('--show-id', help="Shows the ID of each timesheeet entry", is_flag=True)
@@ -90,7 +90,7 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
     output_value = httprequest('POST', body, '/Abak/Transact/GetGroupedTransacts', headers=headers)
     if output == 'json':
         print(json.dumps(output_value.get('data')))
-    elif output == 'table':
+    elif output in ['table', 'wide']:
         projects_clean = get_projects(None, "", 'python')
         project_map = {}
         contexts = get_contexts()
@@ -118,6 +118,10 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
                 "Description": "Description",
                 "Hrs": "Quantity"
             }
+            if output == 'wide':
+                output_format['Date'] = 'Date'
+                output_format['ID'] = "Id"
+
             if show_id:
                 output_format['ID'] = "Id"
             headers = [header for header in output_format]
