@@ -4,3 +4,4 @@ __pycache__/*
 abak.egg-info/*
 fancy_abak.egg-info/*
 .vscode/*
+build/**
