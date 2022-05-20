@@ -85,6 +85,7 @@ def open_browser():
     webbrowser.open(config["endpoint"])
 
 
+
 abak.add_command(login)
 abak.add_command(open_browser)
 
@@ -93,3 +94,7 @@ abak.add_command(client.client)
 abak.add_command(project.project)
 abak.add_command(abak_config.config)
 abak.add_command(context)
+
+
+if __name__ == "__main__":
+    abak()

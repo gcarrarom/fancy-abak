@@ -95,7 +95,7 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
         project_map = {}
         contexts = get_contexts()
         for project in projects_clean:
-            project_cons = re.findall(r'(?:\()(.*)(?:\))', project['Display'])[0]
+            project_cons = project['Display'][0:60]
             for context in contexts:
                 if project['Id'] == contexts[context]['Project']:
                     project_map[project_cons] = context
@@ -134,7 +134,7 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
                         date_instance = datetime.strptime(date_text, config['date_format'])
                         instance.append(date_instance.strftime('%A'))
                     elif header == 'Project':
-                        instance.append(project_map.get(re.findall(r'(?:\()(.*)(?:\))', row[output_format[header]])[0], row[output_format[header]]))
+                        instance.append(project_map.get(row[output_format[header]][0:60], row[output_format[header]]))
                     else:
                         instance.append(row[output_format.get(header)] if header != "Date" else row[output_format.get(header)].split('T00')[0])
                 rows.append(instance)
