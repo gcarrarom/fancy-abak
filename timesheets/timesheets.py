@@ -159,6 +159,7 @@ def convert_date(text):
 
 @click.command(name='set')
 @click.option('--date', help="Date to set the timesheet entry", callback=validate_entry_date, show_default="Today")
+@click.option('--yesterday', help="Sets the date to yesterday", is_flag=True)
 @click.option('--description', '-d', help="Description of the activities for that day", required=False)
 @click.option('--context', help="Context to use when setting the timesheet", default=lambda: environ.get('current_context', None))
 @click.option('--hours', '-h', help="Number of work-hours to be assigned for the timesheet entry.", default=8.0, type=float)
@@ -166,12 +167,14 @@ def convert_date(text):
 @click.option('--project-id', '-p', help="ID of the project to to assign the timesheet entry.", default=lambda: environ.get('project_id', None), show_default="selected project_id")
 @click.option('--bs', help="For when you need to dazzle!", is_flag=True)
 @click.pass_context
-def timesheet_set(ctx, date, description, context, hours, client_id, project_id, bs):
+def timesheet_set(ctx, date, description, context, hours, client_id, project_id, bs, yesterday):
     '''
     Creates a timesheet entry in ABAK
     '''
     config = get_config()
-    if not date:
+    if yesterday:
+        date = datetime.strftime(datetime.now() - timedelta(days=1), format=config['date_format'])
+    elif not date:
         date = datetime.strftime(datetime.now(), format=config['date_format'])
 
     contexts = get_contexts()
