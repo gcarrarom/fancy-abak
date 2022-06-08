@@ -32,6 +32,8 @@ def validate_entry_date(ctx, param, value):
     if not value:
         return None
     config = get_config()
+    if value.upper() in ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]:
+        return value
     try:
         datetime.strptime(value, config['date_format'])
         return value
@@ -171,9 +173,12 @@ def timesheet_set(ctx, date, description, context, hours, client_id, project_id,
     '''
     Creates a timesheet entry in ABAK
     '''
+    days_of_the_week = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
     config = get_config()
     if yesterday:
         date = datetime.strftime(datetime.now() - timedelta(days=1), format=config['date_format'])
+    elif date.upper() in days_of_the_week:
+        date = datetime.strftime(datetime.now() - timedelta(days=datetime.now().weekday()) + timedelta(days=days_of_the_week.index(date.upper())), format=config['date_format'])
     elif not date:
         date = datetime.strftime(datetime.now(), format=config['date_format'])
 
