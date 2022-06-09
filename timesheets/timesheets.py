@@ -189,6 +189,9 @@ def timesheet_set(ctx, date, description, context, hours, client_id, project_id,
     if selected_context:
         client_id = selected_context['Client']
         project_id = selected_context['Project']
+    elif context != None:
+        raise Sorry(f"context \"{context}\" was not found")
+
     if bs:
         description = generate_bs()
         click.confirm(f"Are you sure you would like to add '{description}' to your timesheet?", abort=True)
