@@ -177,8 +177,9 @@ def timesheet_set(ctx, date, description, context, hours, client_id, project_id,
     config = get_config()
     if yesterday:
         date = datetime.strftime(datetime.now() - timedelta(days=1), format=config['date_format'])
-    elif date.upper() in days_of_the_week:
-        date = datetime.strftime(datetime.now() - timedelta(days=datetime.now().weekday()) + timedelta(days=days_of_the_week.index(date.upper())), format=config['date_format'])
+    elif date: 
+        if date.upper() in days_of_the_week:
+            date = datetime.strftime(datetime.now() - timedelta(days=datetime.now().weekday()) + timedelta(days=days_of_the_week.index(date.upper())), format=config['date_format'])
     elif not date:
         date = datetime.strftime(datetime.now(), format=config['date_format'])
 
