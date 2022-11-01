@@ -56,13 +56,14 @@ def validate_description(ctx, param, value):
 @click.option('--show-totals', help="Show a summary of all projects for the given range", is_flag=True)
 @click.option('--show-id', help="Shows the ID of each timesheeet entry", is_flag=True)
 @click.option('--previous', help="Shows the previous iteration from the range", is_flag=True)
-def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previous):
+@click.argument('context-filter', required=False)
+def timesheet_list(ctx, date, output, query_range, show_totals, show_id, previous, context_filter):
     '''
     Lists the timesheet entries in ABAK
     '''
-    list_timesheet_entries(date, output, query_range, show_totals, show_id, previous)
+    list_timesheet_entries(date, output, query_range, show_totals, show_id, previous, context_filter)
     
-def list_timesheet_entries(date, output, query_range, show_totals, show_id, previous):
+def list_timesheet_entries(date, output, query_range, show_totals, show_id, previous, context_filter):
     config = get_config()
 
     if not date:
@@ -90,28 +91,51 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
     }
 
     output_value = httprequest('POST', body, '/Abak/Transact/GetGroupedTransacts', headers=headers)
+    transactions_to_clean = output_value.get('data')
+    projects_clean = get_projects(None, "", 'python')
+    project_map = {}
+    contexts = get_contexts()
+    for project in projects_clean:
+        project_cons = project['Display'][0:60]
+        for context in contexts:
+            if project['Id'] == contexts[context]['Project']:
+                project_map[project_cons] = context
+                continue
+
+    if context_filter:
+        if context_filter not in [context for context in contexts]:
+            raise click.exceptions.BadOptionUsage('context_filter', f"Context '{context_filter}' doesn't exist!")
+        transactions = [
+            transaction 
+            for transaction in transactions_to_clean 
+            if context_filter == project_map[transaction.get('ProjectName')[0:60]]
+        ]
+    else: 
+        transactions = transactions_to_clean
+
     if output == 'json':
-        print(json.dumps(output_value.get('data')))
+        print(json.dumps(transactions))
     elif output in ['table', 'wide']:
-        projects_clean = get_projects(None, "", 'python')
-        project_map = {}
-        contexts = get_contexts()
-        for project in projects_clean:
-            project_cons = project['Display'][0:60]
-            for context in contexts:
-                if project['Id'] == contexts[context]['Project']:
-                    project_map[project_cons] = context
+
 
         if show_totals:
             date_datetime = datetime.strptime(date, config['date_format']) 
             click.echo("For the " + (f"month of {calendar.month_name[date_datetime.month]}" if query_range == "Monthly" else "day of " + date if query_range == "Daily" else "week of " + date) + 
                         ", here are the totals:")
             totals = {} 
-            for row in output_value.get('data'):
+            for row in transactions:
                 totals[row['ProjectName']] = totals.get(row['ProjectName'], 0) + row.get('Quantity', 0)
             totals['TOTAL'] = sum([ totals[total] for total in totals])
-            headers = ['ProjectName', 'Quanty']
-            print(tabulate([[total, totals[total]]for total in totals], headers=headers, numalign="left", colalign=("right",)))
+            headers = ['Context', 'Quanty', 'Hour Price']
+            to_print = []
+            total_price = 0
+            for total in totals:
+                if total != "TOTAL":
+                    to_print.append([project_map[total[0:60]], totals[total], str(contexts[project_map[total[0:60]]].get('Price', 0))])
+                    total_price += totals[total] * contexts[project_map[total[0:60]]].get('Price', 0)
+                else:
+                    to_print.append([total, totals[total], str(total_price)])
+            print(tabulate(to_print, headers=headers, numalign="left"))
         else:
             output_format = {
                 "Weekday": "Date",
@@ -128,7 +152,7 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
                 output_format['ID'] = "Id"
             headers = [header for header in output_format]
             rows = []
-            for row in output_value['data']:
+            for row in transactions:
                 instance = []
                 for header in headers:
                     if header == 'Weekday':
@@ -142,7 +166,7 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
                 rows.append(instance)
             print(tabulate(rows, headers=headers))
     elif output == "python":
-        return output_value.get('data')
+        return transactions
 
 def convert_date(text):
     start = text.find('new Date')
@@ -163,7 +187,7 @@ def convert_date(text):
 @click.option('--date', help="Date to set the timesheet entry", callback=validate_entry_date, show_default="Today")
 @click.option('--yesterday', help="Sets the date to yesterday", is_flag=True)
 @click.option('--description', '-d', help="Description of the activities for that day", required=False)
-@click.option('--context', help="Context to use when setting the timesheet", default=lambda: environ.get('current_context', None))
+@click.option('--context', help="Context to use when setting the timesheet", default=lambda: environ.get('current_context', None), show_default="selected context - 'abak context select'")
 @click.option('--hours', '-h', help="Number of work-hours to be assigned for the timesheet entry.", default=8.0, type=float)
 @click.option('--client-id', '-c', help="ID of the client to assign the timesheet entry.", default=lambda: environ.get('client_id', None), show_default="selected client_id")
 @click.option('--project-id', '-p', help="ID of the project to to assign the timesheet entry.", default=lambda: environ.get('project_id', None), show_default="selected project_id")
@@ -183,10 +207,9 @@ def timesheet_set(ctx, date, description, context, hours, client_id, project_id,
     elif not date:
         date = datetime.strftime(datetime.now(), format=config['date_format'])
 
-    contexts = get_contexts()
-    selected_context = contexts.get(context, None)
-
-    if selected_context:
+    if context:
+        contexts = get_contexts()
+        selected_context = contexts.get(context, None)
         client_id = selected_context['Client']
         project_id = selected_context['Project']
     elif context != None:

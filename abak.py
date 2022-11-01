@@ -23,6 +23,9 @@ from abak_shared_functions import (
 @click.group()
 @click.pass_context
 def abak(ctx):
+    """
+    Abak UI, NEVER AGAIN!
+    """
     config = get_config()
     if ctx.invoked_subcommand not in ["login", "config"]:
         try:

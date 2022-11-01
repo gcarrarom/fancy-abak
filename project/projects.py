@@ -3,9 +3,8 @@ import click
 from iterfzf import iterfzf
 from tabulate import tabulate
 import json
-from abak_shared_functions import get_config, option_not_none, httprequest
+from abak_shared_functions import get_config, httprequest
 from os import environ
-
 
 @click.group()
 @click.pass_context
@@ -68,4 +67,4 @@ def get_projects(client_id, query_text, output):
         return projects.get('data')
 
 project.add_command(list_projects)
-project.add_command(project_select)
+project.add_command(project_select) 
