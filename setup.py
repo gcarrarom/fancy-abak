@@ -22,4 +22,5 @@ setup(
         [console_scripts]
         abak=abak:abak
     ''',
+    long_description="CLI Tool to interface with Abak"
 )
