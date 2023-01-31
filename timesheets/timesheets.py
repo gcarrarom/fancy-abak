@@ -108,7 +108,7 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
         transactions = [
             transaction 
             for transaction in transactions_to_clean 
-            if context_filter == project_map[transaction.get('ProjectName')[0:60]]
+            if context_filter == project_map.get(transaction.get('ProjectName')[0:60])
         ]
     else: 
         transactions = transactions_to_clean
@@ -131,8 +131,8 @@ def list_timesheet_entries(date, output, query_range, show_totals, show_id, prev
             total_price = 0
             for total in totals:
                 if total != "TOTAL":
-                    to_print.append([project_map[total[0:60]], totals[total], str(contexts[project_map[total[0:60]]].get('Price', 0))])
-                    total_price += totals[total] * contexts[project_map[total[0:60]]].get('Price', 0)
+                    to_print.append([project_map.get(total[0:60], "Context Unassigned"), totals[total], str(contexts.get(project_map.get(total[0:60]), {'Price': 0}).get('Price', 0))])
+                    total_price += totals.get(total) * contexts.get(project_map.get(total[0:60]), {'Price': 0}).get('Price', 0)
                 else:
                     to_print.append([total, totals[total], str(total_price)])
             print(tabulate(to_print, headers=headers, numalign="left"))
