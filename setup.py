@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='fancy-abak',
-    version='1.0.2',
+    version='1.0.3',
     author='Gui Martins',
     url='https://fancywhale.ca/',
     author_email='gmartins@fancywhale.ca',
