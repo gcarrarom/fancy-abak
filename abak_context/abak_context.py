@@ -78,7 +78,7 @@ def context_select(name):
     '''
     contexts = get_contexts()
     if not name:
-        selected_context = iterfzf([context for context in contexts], multi=false)
+        selected_context = iterfzf([context for context in contexts], multi=False)
     else:
         if name not in contexts.keys():
             raise Sorry(f'context {name} does not exist')
