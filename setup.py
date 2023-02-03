@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='fancy-abak',
-    version='1.1.0',
+    version='1.2.0',
     author='Gui Martins',
     url='https://fancywhale.ca/',
     author_email='gmartins@fancywhale.ca',
@@ -16,7 +16,7 @@ setup(
         "click==8.1.3",
         "idna==3.4",
         "importlib-metadata==6.0.0",
-        "iterfzf==0.5.0.20.0",
+        "pyfzf==0.3.1",
         "jaraco.classes==3.2.3",
         "keyring==23.13.1",
         "more-itertools==9.0.0",

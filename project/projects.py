@@ -1,6 +1,6 @@
 from abak_config.set import set_configuration_key
 import click
-from iterfzf import iterfzf
+from pyfzf import FzfPrompt
 from tabulate import tabulate
 import json
 from abak_shared_functions import get_config, httprequest
@@ -36,7 +36,8 @@ def project_select(ctx, client_id, all_projects):
     '''
     projects_list = get_projects(client_id if not all_projects else None, "", 'python')
     if len(projects_list) > 1:
-        selected_dirty = iterfzf([" - ".join([item.get('Id'), item.get('Display')]) for item in projects_list])
+        fzf = FzfPrompt()
+        selected_dirty = fzf.prompt([" - ".join([item.get('Id'), item.get('Display')]) for item in projects_list])
         selected = selected_dirty.split(' - ')[0]
     else:
         selected = projects_list[0].get('Id')
