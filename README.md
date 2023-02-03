@@ -1,21 +1,31 @@
+# Fancy Abak
+
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fancy-abak)
 ![PyPI](https://img.shields.io/pypi/v/fancy-abak?style=flat)
-
-# fancy-abak
-
 CLI tool to use ABAK
+
+- [Fancy Abak](#fancy-abak)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+    - [MacOS](#macos)
 
 ## Requirements
 
-* (Tested and built using) Python >3.6
+- (Tested and built using) Python >3.10
 
 ## Installation
 
 Package is available in PyPi:
 
-`pip install fancy-abak`
+```shell
+pip install fancy-abak
+```
 
-## Roadmap
+### MacOS
 
-1. Batch duplicate
-2. Parallel apply
+Package is available in brew:
+
+```shell
+brew tap gcarrarom/fancygui
+brew install gcarrarom/fancygui/fancy-abak
+```
