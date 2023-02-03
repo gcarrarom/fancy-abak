@@ -5,7 +5,6 @@ import client
 import project
 import abak_config
 import os
-from click_keyring import keyring_option
 import keyring
 from abak_context import context
 
@@ -63,12 +62,18 @@ def abak(ctx):
                 raise exception
 
 
+def get_password(ctx, param, value):
+    if not value:
+        return keyring.get_password("fancy-abak", ctx.params['username'])
+    else:
+        return value
+
 @click.command()
 @click.option(
     "-u", "--username", help="the username to use for login", required=True, prompt=True
 )
-@keyring_option(
-    "-p", "--password", help="the password to use for login", prefix="fancy-abak"
+@click.option(
+    "-p", "--password", help="the password to use for login", prompt=True, hide_input=True, prompt_required=False, callback=get_password
 )
 @click.option(
     "-e",
