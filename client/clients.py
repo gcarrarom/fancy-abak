@@ -2,7 +2,7 @@ from abak_config.remove import remove_configuration_key
 from abak_config.set import set_configuration_key
 import click
 import json
-from iterfzf import iterfzf
+from pyfzf import FzfPrompt
 from tabulate import tabulate
 from abak_shared_functions import get_config, httprequest
 
@@ -33,7 +33,8 @@ def client_select(ctx):
     '''
     clients_list = get_clients("", 'python')
     if len(clients_list) > 1:
-        selected_dirty = iterfzf([" - ".join([item.get('Id'), item.get('DisplayName')]) for item in clients_list])
+        fzf = FzfPrompt()
+        selected_dirty = fzf.prompt([" - ".join([item.get('Id'), item.get('DisplayName')]) for item in clients_list])
         selected = selected_dirty.split(' - ')[0]
     else:
         selected = clients_list[0].get('Id')

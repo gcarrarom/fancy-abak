@@ -4,7 +4,7 @@ import json
 from tabulate import tabulate
 from abak_config import set_configuration_key
 from abak_shared_functions import get_clean_config, Sorry
-from iterfzf import iterfzf
+from pyfzf import FzfPrompt
 from os import environ
 
 headers = ['Project', 'Client', 'Price']
@@ -78,7 +78,8 @@ def context_select(name):
     '''
     contexts = get_contexts()
     if not name:
-        selected_context = iterfzf([context for context in contexts], multi=False)
+        fzf = FzfPrompt()
+        selected_context = fzf.prompt([context for context in contexts], fzf_options="+m")
     else:
         if name not in contexts.keys():
             raise Sorry(f'context {name} does not exist')
