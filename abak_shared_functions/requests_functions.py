@@ -37,4 +37,4 @@ def httprequest(request_type, body, path, is_json=False, headers={}):
         output_value = json.loads(convert_date(result.text))
         return output_value
     except requests.exceptions.HTTPError as error:
-        raise Sorry(re.findall('(<title>)(.*)(</title>)', result.text)[0][1])   
+        raise Sorry(re.findall('(<title>)(.*)(</title>)', result.text)[0][1])
