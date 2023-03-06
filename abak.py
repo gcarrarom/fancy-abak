@@ -31,24 +31,19 @@ def abak(ctx):
             result = httprequest("get", None, "/Abak/Transact/GetEmployee_Optimized")
             config["user_id"] = result["data"][0]["Id"]
             write_config_file(config["config_file_path"], config)
-            [
-                os.environ.setdefault(key, config[key])
-                for key in config
-                if key
-                not in [
-                    "app_dir",
-                    "config_file_path",
-                    "authenticated",
-                    "headers",
-                    "token",
-                    "contexts"
-                ]
-            ]
+            for key in config:
+                if config.get(key) and  key not in ["app_dir",
+                                "config_file_path",
+                                "authenticated",
+                                "headers",
+                                "token",
+                                "contexts"]:
+                    os.environ.setdefault(key, config.get(key))
         except ConnectionError:
             Sorry(
                 "it seems that you are not connected to the internet or the endpoint is not available"
             )
-        except Exception:
+        except Exception as exc:
             try:
                 authenticate(
                     config["username"],
@@ -60,6 +55,7 @@ def abak(ctx):
                 exit(127)
             except Exception as exception:
                 raise exception
+    
 
 
 def get_password(ctx, param, value):
