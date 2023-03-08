@@ -5,9 +5,33 @@
 CLI tool to use ABAK
 
 - [Fancy Abak](#fancy-abak)
+  - [Available Commands](#available-commands)
   - [Requirements](#requirements)
   - [Installation](#installation)
     - [MacOS](#macos)
+
+## Available Commands
+
+```bash
+$ abak --help     
+
+Alias tip: a --help
+Usage: abak [OPTIONS] COMMAND [ARGS]...
+
+  Abak UI, NEVER AGAIN!
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  client     Find clients to assign timesheet entries
+  config     Group of commands to manage the jiractl command line
+  context    Context operations for Abak.
+  login
+  open       Opens abak on your default browser - Please don't use this :)
+  project    Find projects to assign timesheet entries
+  timesheet  Commands to manage timesheet entries
+```
 
 ## Requirements
 
