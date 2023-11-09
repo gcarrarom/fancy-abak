@@ -5,81 +5,91 @@ name: Python application
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     strategy:
       matrix:
-        python_version: ["3.9", "3.10"]
-    
+        python_version: ["3.11"]
+
       fail-fast: true
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python_version }}
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python_version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-        
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python_version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python_version }}
+      # Install poetry and the dependencies of the project
+      - name: Install Poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+          source $HOME/.poetry/env
+      - name: Install dependencies
+        run: |
+          poetry install
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
   release:
     needs: [build]
-    if: "!contains(github.event.head_commit.message, 'skip ci') && github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, 'skip cd')"
+    if: "!contains(github.event.head_commit.message , 'skip ci') && github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, 'skip cd')"
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Retrieving the Version
-      run: | 
-        echo "Getting version from the setup.py file..."
-        ApplicationVersion=$(cat setup.py | grep version | cut -d '=' -f 2 | cut -d "'" -f 2)
-        echo "setup.py file version: $ApplicationVersion"
-        echo "Testing if this version already exists in GitHub..."
-        STATUS_CODE=$(curl -LI https://api.github.com/repos/gcarrarom/${GITHUB_REPOSITORY}/git/ref/tags/v$ApplicationVersion  -o /dev/null -w '%{http_code}\n')
-        echo "GitHub returned with a ${STATUS_CODE}."
+      - uses: actions/checkout@v2
+      - name: Retrieving the Version
+        run: |
+          echo "Getting the version from pyproject.toml..."
+          ApplicationVersion=$(cat pyproject.toml | grep version | cut -d '=' -f 2 | cut -d '"' -f 2)
+          echo "pyproject.toml version: $ApplicationVersion"
+          echo "Testing if this version already exists in GitHub..."
+          STATUS_CODE=$(curl -LI https://api.github.com/repos/gcarrarom/${GITHUB_REPOSITORY}/git/ref/tags/v$ApplicationVersion  -o /dev/null -w '%{http_code}\n')
+          echo "GitHub returned with a ${STATUS_CODE}."
 
-        if [[ "$STATUS_CODE" != "404" ]]; then
-          if [[ "$STATUS_CODE" = "200" ]]; then
-            echo "Tag v$ApplicationVersion already exists!"
-            exit 100
-          else
-            echo "Something went wrong! Github returned a $STATUS_CODE error!"
-            exit 200
+          if [[ "$STATUS_CODE" != "404" ]]; then
+            if [[ "$STATUS_CODE" = "200" ]]; then
+              echo "Tag v$ApplicationVersion already exists!"
+              exit 100
+            else
+              echo "Something went wrong! Github returned a $STATUS_CODE error!"
+              exit 200
+            fi
           fi
-        fi
-        echo "All good, this doesn't match any old versions"
-        echo "Version to be used: $ApplicationVersion"
-        echo "RELEASE_VERSION=$ApplicationVersion" >> $GITHUB_ENV
-    - uses: actions/setup-python@v2
-    - name: creating dist
-      run: |
-        python3 -m pip install --upgrade build
-        python3 -m build
-    - name: twine upload
-      run: |
-        python3 -m pip install --upgrade twine
-        python3 -m twine upload dist/* -p "${{ secrets.PYPI_PASS }}" -u "__token__"
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@latest
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v${{ env.RELEASE_VERSION }}
-        release_name: Release v${{ env.RELEASE_VERSION }}
-        draft: false
-        prerelease: false        
+          echo "All good, this doesn't match any old versions"
+          echo "Version to be used: $ApplicationVersion"
+          echo "RELEASE_VERSION=$ApplicationVersion" >> $GITHUB_ENV
+      - uses: actions/setup-python@v2
+      - name: Install Poetry
+        uses: snok/install-poetry@v1.1.6
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      - name: Install dependencies
+        run: |
+          poetry install
+      - name: creating dist
+        run: |
+          poetry build
+      # Publish to PyPI
+      - name: twine upload
+        run: poetry publish --username __token__ --password ${{ secrets.PYPI_PASS }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.RELEASE_VERSION }}
+          release_name: Release v${{ env.RELEASE_VERSION }}
+          draft: false
+          prerelease: false

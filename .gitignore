@@ -1,4 +1,4 @@
-*/__pycache__/*
+**/__pycache__/**
 __pycache__/*
 
 abak.egg-info/*
@@ -6,3 +6,10 @@ fancy_abak.egg-info/*
 .vscode/*
 build/**
 venv/**
+contexts.yaml
+example.yaml
+fancy_abak/abak_config/__pycache__/__init__.cpython-310.pyc
+fancy_abak/venv/**
+example
+fancy_abak/build/**
+fancy_abak/fancy_abak.egg-info/**
