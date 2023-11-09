@@ -13,3 +13,4 @@ fancy_abak/venv/**
 example
 fancy_abak/build/**
 fancy_abak/fancy_abak.egg-info/**
+fancy_abak/abak_config/__pycache__/**
