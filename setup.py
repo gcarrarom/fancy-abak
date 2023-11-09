@@ -1,15 +1,15 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='fancy-abak',
-    version='1.2.1',
-    author='Gui Martins',
-    url='https://fancywhale.ca/',
-    author_email='gmartins@fancywhale.ca',
+    name="fancy-abak",
+    version="2.0.0",
+    author="Gui Martins",
+    url="https://fancywhale.ca/",
+    author_email="gmartins@fancywhale.ca",
     packages=find_packages(),
     include_package_data=True,
-    py_modules=['abak'],
-    python_requires='>=3.6',
+    py_modules=["abak"],
+    python_requires=">=3.6",
     install_requires=[
         "certifi==2022.12.7",
         "charset-normalizer==3.0.1",
@@ -27,9 +27,9 @@ setup(
         "urllib3==1.26.14",
         "zipp==3.12.0",
     ],
-    entry_points='''
+    entry_points="""
         [console_scripts]
         abak=abak:abak
-    ''',
-    long_description="CLI Tool to interface with Abak"
+    """,
+    long_description="CLI Tool to interface with Abak",
 )

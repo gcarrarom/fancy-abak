@@ -13,9 +13,7 @@ CLI tool to use ABAK
 ## Available Commands
 
 ```bash
-$ abak --help     
-
-Alias tip: a --help
+$ abak --help
 Usage: abak [OPTIONS] COMMAND [ARGS]...
 
   Abak UI, NEVER AGAIN!
@@ -27,6 +25,7 @@ Commands:
   client     Find clients to assign timesheet entries
   config     Group of commands to manage the jiractl command line
   context    Context operations for Abak.
+  do         GPT Powered command to "do" something
   login
   open       Opens abak on your default browser - Please don't use this :)
   project    Find projects to assign timesheet entries
@@ -35,7 +34,7 @@ Commands:
 
 ## Requirements
 
-- (Tested and built using) Python >3.10
+- (Tested and built using) Python >3.11
 
 ## Installation
 

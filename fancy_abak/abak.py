@@ -1,21 +1,20 @@
 import webbrowser
 import click
-import timesheets
-import client
-import project
-import abak_config
+from fancy_abak import timesheets, client, project, abak_config
+from fancy_abak.abak_context import context
+from fancy_abak.do import do
+import fancy_abak.abak_config
 import os
 import keyring
-from abak_context import context
 
 from requests.exceptions import ConnectionError
 
-from abak_shared_functions import (
+from fancy_abak.abak_shared_functions import (
     write_config_file,
     get_config,
     authenticate,
     httprequest,
-    Sorry
+    Sorry,
 )
 
 
@@ -32,12 +31,14 @@ def abak(ctx):
             config["user_id"] = result["data"][0]["Id"]
             write_config_file(config["config_file_path"], config)
             for key in config:
-                if config.get(key) and  key not in ["app_dir",
-                                "config_file_path",
-                                "authenticated",
-                                "headers",
-                                "token",
-                                "contexts"]:
+                if config.get(key) and key not in [
+                    "app_dir",
+                    "config_file_path",
+                    "authenticated",
+                    "headers",
+                    "token",
+                    "contexts",
+                ]:
                     os.environ.setdefault(key, config.get(key))
         except ConnectionError:
             Sorry(
@@ -55,21 +56,27 @@ def abak(ctx):
                 exit(127)
             except Exception as exception:
                 raise exception
-    
 
 
 def get_password(ctx, param, value):
     if not value:
-        return keyring.get_password("fancy-abak", ctx.params['username'])
+        return keyring.get_password("fancy-abak", ctx.params["username"])
     else:
         return value
+
 
 @click.command()
 @click.option(
     "-u", "--username", help="the username to use for login", required=True, prompt=True
 )
 @click.option(
-    "-p", "--password", help="the password to use for login", prompt=True, hide_input=True, prompt_required=False, callback=get_password
+    "-p",
+    "--password",
+    help="the password to use for login",
+    prompt=True,
+    hide_input=True,
+    prompt_required=False,
+    callback=get_password,
 )
 @click.option(
     "-e",
@@ -89,7 +96,6 @@ def open_browser():
     webbrowser.open(config["endpoint"])
 
 
-
 abak.add_command(login)
 abak.add_command(open_browser)
 
@@ -98,6 +104,7 @@ abak.add_command(client.client)
 abak.add_command(project.project)
 abak.add_command(abak_config.config)
 abak.add_command(context)
+abak.add_command(do)
 
 
 if __name__ == "__main__":
